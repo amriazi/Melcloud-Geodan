@@ -9,6 +9,7 @@ __pycache__/
 
 # CSV log files (contains operational data)
 *.csv
+logs/
 
 # IDE files
 .vscode/

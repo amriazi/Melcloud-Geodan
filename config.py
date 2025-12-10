@@ -63,7 +63,7 @@ FLOW_LIMITS = {
 # ================== Control Parameters ==================
 
 CONTROL = {
-    "target_room_temp": 23.5,  # Comfort setpoint (°C)
+    "target_room_temp": 23.1,  # Comfort setpoint (°C)
 }
 
 # ================== Application Rhythm (v4.0) ==================
@@ -158,7 +158,7 @@ ROOMS = {
 # ================== CSV Configuration ==================
 
 CSV = {
-    "path": Path("./heating_log.csv"),  # Path to CSV log file
+    "path": Path("/home/amir/controller/logs/heating_log.csv"),  # Path to CSV log file
 }
 
 # ================== Overshoot Detection (v5.1) ==================

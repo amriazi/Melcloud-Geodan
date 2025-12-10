@@ -19,6 +19,22 @@ Credentials are now stored in `.env` file (git-ignored). Copy `.env.example` to 
 ## Quick Start
 
 ### Prerequisites
+
+**Using venv (recommended for Linux/Ubuntu):**
+```bash
+# Create virtual environment
+python3 -m venv venv
+
+# Activate venv
+source venv/bin/activate  # On Linux/Mac
+# or
+venv\Scripts\activate     # On Windows PowerShell
+
+# Install dependencies
+pip install -r requirements.txt
+```
+
+**Without venv:**
 ```powershell
 pip install -r requirements.txt
 ```
@@ -34,7 +50,35 @@ cd C:\Projects\Flow_controller
 python melcloud_flow_controller.py
 ```
 
+### Schedule
+
+**Windows:**
 Schedule to run every 10 minutes via Windows Task Scheduler.
+
+**Ubuntu/Linux (Cron with venv):**
+```bash
+# Create logs directory
+mkdir -p /home/amir/controller/logs
+
+# Edit crontab
+crontab -e
+
+# Add this line (runs at :00, :10, :20, :30, :40, :50 every hour)
+# Uses venv Python: /home/amir/controller/venv/bin/python3
+*/10 * * * * cd /home/amir/controller && /home/amir/controller/venv/bin/python3 melcloud_flow_controller.py >> /home/amir/controller/logs/cron.log 2>&1
+```
+
+**Note:** If your venv is in a different location, adjust the Python path accordingly. To find your venv Python path: `which python3` (while venv is activated).
+
+**Logs:**
+- CSV log: `/home/amir/controller/logs/heating_log.csv`
+- Cron output: `/home/amir/controller/logs/cron.log`
+
+**View logs:**
+```bash
+tail -f /home/amir/controller/logs/cron.log
+tail -f /home/amir/controller/logs/heating_log.csv
+```
 
 ---
 

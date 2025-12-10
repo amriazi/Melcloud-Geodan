@@ -23,6 +23,21 @@ A trajectory-based flow temperature controller for hydronic floor heating system
 
 ### 1. Install Dependencies
 
+**Using venv (recommended):**
+```bash
+# Create virtual environment
+python3 -m venv venv
+
+# Activate venv
+source venv/bin/activate  # On Linux/Mac
+# or
+venv\Scripts\activate     # On Windows
+
+# Install dependencies
+pip install -r requirements.txt
+```
+
+**Without venv:**
 ```bash
 pip install -r requirements.txt
 ```
@@ -60,9 +75,46 @@ Edit `config.py` to adjust:
 python melcloud_flow_controller.py
 ```
 
-### 5. Schedule (Windows Task Scheduler)
+### 5. Schedule
 
+**Windows Task Scheduler:**
 Run every 10 minutes for monitoring, control decisions happen at the top of each hour (XX:00).
+
+**Ubuntu/Linux (Cron with venv):**
+```bash
+# Create logs directory
+mkdir -p /home/amir/controller/logs
+
+# Create venv (if not already created)
+cd /home/amir/controller
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+
+# Edit crontab
+crontab -e
+
+# Add this line (runs every 10 minutes: :00, :10, :20, :30, :40, :50)
+# Uses venv Python: /home/amir/controller/venv/bin/python3
+*/10 * * * * cd /home/amir/controller && /home/amir/controller/venv/bin/python3 melcloud_flow_controller.py >> /home/amir/controller/logs/cron.log 2>&1
+```
+
+**Note:** If your venv is in a different location (e.g., `.venv`), adjust the Python path accordingly. To find your venv Python path: `which python3` (while venv is activated).
+
+**Logs:**
+- CSV log: `/home/amir/controller/logs/heating_log.csv` (all control data)
+- Cron log: `/home/amir/controller/logs/cron.log` (stdout/stderr from script)
+
+**View logs:**
+```bash
+# View cron output
+tail -f /home/amir/controller/logs/cron.log
+
+# View CSV log
+tail -f /home/amir/controller/logs/heating_log.csv
+```
+
+**Note:** The cron job runs every 10 minutes. Control decisions happen at the top of each hour (XX:00), monitoring happens at XX:10-XX:50.
 
 ## 📁 Project Structure
 
@@ -79,7 +131,10 @@ Flow_controller/
 ├── shelly_backup.py              # Shelly backup thermometer
 ├── dhw_valve_guard.py            # DHW valve management
 ├── utils.py                      # Utility functions
-└── heating_log.csv               # Operational log (git-ignored)
+├── setup-ubuntu.sh               # Ubuntu setup script
+└── logs/                         # Log directory (git-ignored)
+    ├── heating_log.csv           # Operational CSV log
+    └── cron.log                  # Cron output log
 ```
 
 ## 🎛️ Configuration
@@ -144,7 +199,7 @@ Anchors define min/reference/max flow temperatures for different outdoor tempera
 
 ## 📈 CSV Logging
 
-All operations are logged to `heating_log.csv` with:
+All operations are logged to `/home/amir/controller/logs/heating_log.csv` with:
 - Timestamps
 - Temperatures (outdoor, indoor, flow, return, tank)
 - Control decisions (flow command, zone, predicted error)
