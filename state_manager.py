@@ -4,7 +4,7 @@
 """
 CSV state persistence manager.
 
-Version 5.5 - APPEND-ONLY CSV, NO MIGRATION
+Version 5.6 - APPEND-ONLY CSV, NO MIGRATION
 - Append-only writes; never rewrites/migrates existing CSV
 - Always writes current VERSION; never infers from comment
 - Shelly backup columns (shelly_temp, shelly_humidity) appended only if present in header
@@ -14,6 +14,7 @@ Version 5.5 - APPEND-ONLY CSV, NO MIGRATION
 - Minimal state columns (only EMA and DHW start time)
 - V5.4: Removed flow history tracking (flow_2h_ago, flow_3h_ago) - no longer needed
 - V5.5: Supports holiday mode and manual mode (version written to CSV)
+- V5.6: Supports date/time-based holiday mode
 """
 
 import csv

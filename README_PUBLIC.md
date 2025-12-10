@@ -146,17 +146,36 @@ Flow_controller/
 - **Control Zones**: STABLE (±0.05°C), NORMAL (single-step)
 - **Weather Curve**: Adaptive based on outdoor temperature
 
-### Holiday Mode
+### Holiday Mode (v5.6)
 
-Enable in `config.py`:
+Three activation modes in `config.py`:
 ```python
-HOLIDAY_MODE = {"enable": 1}  # 1 = enabled, 0 = disabled
+HOLIDAY_MODE = {
+    "mode": 1,  # 0=force disable, 1=enable on date, 2=force enable
+    
+    # Date/time settings (only used when mode=1)
+    "start_date": "2025-12-20",  # Start date (YYYY-MM-DD)
+    "start_time": "14:00",        # Start time (HH:MM)
+    "end_date": "2026-01-05",    # End date (YYYY-MM-DD)
+    "end_time": "10:00",          # End time (HH:MM)
+}
 ```
 
+**Modes:**
+- **Mode 0**: Force disable (holiday mode always off)
+- **Mode 1**: Enable on date/time (automatic activation/deactivation)
+- **Mode 2**: Force enable (holiday mode always on)
+
+**Settings:**
 - **Target Temperature**: 18.0°C (energy-saving)
 - **Flow Limits**: 20-28°C (lower cap)
 - **Control Zones**: Wider STABLE zone (±0.15°C)
 - **Weather Curve**: More conservative (lower flow temps)
+
+**Transition Behavior:**
+- When activating: Flow temperature is immediately capped at holiday max (28°C)
+- When deactivating: Flow temperature can gradually increase (single-step logic applies)
+- Limits are enforced even in STABLE zone to ensure smooth transitions
 
 ### Manual Mode
 
@@ -235,6 +254,7 @@ Use Manual Mode to:
 
 ## 📝 Version History
 
+- **v5.6** - Added date/time-based holiday mode (automatic activation/deactivation)
 - **v5.5** - Added holiday mode and manual mode switches
 - **v5.4** - Simplified control logic (removed consecutive pause)
 - **v5.3** - Fixed weather minimum enforcement

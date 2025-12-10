@@ -44,12 +44,24 @@ MANUAL_MODE = {
     "enable": 0,  # 1 = manual mode (no MELCloud application), 0 = automatic mode
 }
 
-# ================== Holiday Mode (v5.5) ==================
-# When enabled (1), uses separate target temp, weather curve, control zones, and flow limits
-# Set to 1 to enable, 0 to disable
+# ================== Holiday Mode (v5.6) ==================
+# Three modes:
+#   0 = Force disable (holiday mode always off)
+#   1 = Enable on date/time (automatic activation based on start/end dates)
+#   2 = Force enable (holiday mode always on)
+#
+# When mode=1, holiday mode activates between start_date/start_time and end_date/end_time
+# Date format: "YYYY-MM-DD" (e.g., "2025-12-20")
+# Time format: "HH:MM" (e.g., "14:00" for 2:00 PM)
 
 HOLIDAY_MODE = {
-    "enable": 0,  # 1 = holiday mode (energy-saving), 0 = normal mode
+    "mode": 0,  # 0=force disable, 1=enable on date, 2=force enable
+    
+    # Date/time settings (only used when mode=1)
+    "start_date": "2025-12-20",  # Start date (YYYY-MM-DD)
+    "start_time": "14:00",       # Start time (HH:MM, 24-hour format)
+    "end_date": "2026-01-05",    # End date (YYYY-MM-DD)
+    "end_time": "10:00",         # End time (HH:MM, 24-hour format)
 }
 
 # ================== Flow Temperature Limits ==================
@@ -253,4 +265,4 @@ CONFIG = {
 
 # ================== Version ==================
 
-VERSION = "5.5"  # Added holiday mode and manual mode switches
+VERSION = "5.6"  # Added date/time-based holiday mode (mode 0/1/2)

@@ -4,7 +4,7 @@
 """
 Pure Hourly Rhythm Control Logic for flow temperature.
 
-Version 5.5 - Holiday Mode and Manual Mode
+Version 5.6 - Date/Time-Based Holiday Mode
 - Single-step changes (±1°C or OFF↔28°C) at top of hour ONLY
 - 2-hour trajectory prediction accounts for floor heating thermal lag
 - Two zones: STABLE (hold current optimal) and NORMAL (single-step)
@@ -13,6 +13,7 @@ Version 5.5 - Holiday Mode and Manual Mode
 - V5.4: Removed consecutive pause mechanism - simplified logic
 - V5.5: Added holiday mode (separate target temp, weather curve, zones, limits)
 - V5.5: Added manual mode (calculation only, no MELCloud application)
+- V5.6: Added date/time-based holiday mode (automatic activation/deactivation)
 - No emergency overrides, no DHW flow moderation
 
 Key principle: Decide once per hour. Monitor with predictions in between.
@@ -151,7 +152,7 @@ def hourly_rhythm_decision(
     use_holiday_mode: bool = False,
 ) -> Tuple[float, float, float, float, float, str, str]:
     """
-    V5.5 Simplified Control Decision with Holiday Mode Support.
+    V5.6 Simplified Control Decision with Holiday Mode Support.
     
     Pure trajectory-based control with 2-hour prediction:
     - Two zones: STABLE (hold current optimal flow) and NORMAL (single-step)
@@ -224,10 +225,15 @@ def hourly_rhythm_decision(
             new_flow = max(limits["min_on"], int(min_flow))
             adjustment = new_flow - last_flow
             comment_parts.append(f"but weather min={int(min_flow)}°C at {fmt1(outdoor_ema)}°C - forcing ON")
-            return (new_flow, predicted_temp, predicted_error, ref_flow, adjustment, decision_zone, "; ".join(comment_parts))
+            # Enforce limits before returning
+            new_flow = max(limits["off"], min(limits["max"], new_flow))
+            return (int(new_flow), predicted_temp, predicted_error, ref_flow, adjustment, decision_zone, "; ".join(comment_parts))
         
-        # Otherwise hold
-        return (last_flow, predicted_temp, predicted_error, ref_flow, 0, decision_zone, "; ".join(comment_parts))
+        # Otherwise hold, but enforce limits (e.g., if switching from normal to holiday mode)
+        new_flow = max(limits["off"], min(limits["max"], last_flow))
+        if new_flow != last_flow:
+            comment_parts.append(f"capped at limit={int(new_flow)}°C")
+        return (int(new_flow), predicted_temp, predicted_error, ref_flow, new_flow - last_flow, decision_zone, "; ".join(comment_parts))
     
     # ===== ZONE 2: NORMAL (Single-step changes) =====
     # Everything else - single-step based on trajectory

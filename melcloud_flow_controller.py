@@ -4,7 +4,7 @@
 """
 MELCloud Flow Controller - Main entry point.
 
-Version 5.5 - Holiday Mode and Manual Mode
+Version 5.6 - Date/Time-Based Holiday Mode
 Runs every 10 minutes.
 Control decisions ONLY at top of hour (XX:00-XX:09).
 Between hours (XX:10-XX:59): Monitor only, show predictions without deciding.
@@ -18,6 +18,7 @@ V5.3: Removed overshoot function; Simplified single-step logic; Weather min/max 
 V5.4: Removed consecutive pause mechanism - simplified and more coherent logic.
 V5.5: Added holiday mode (separate target temp, weather curve, zones, limits).
 V5.5: Added manual mode (calculation only, no MELCloud application).
+V5.6: Added date/time-based holiday mode (mode 0=force disable, 1=enable on date, 2=force enable).
 No emergency overrides, no DHW flow moderation.
 """
 
@@ -47,6 +48,56 @@ from control_logic import (
 )
 from state_manager import CSVStateManager
 from dhw_valve_guard import update_valve_guard
+
+
+def is_holiday_mode_active(now: dt.datetime) -> bool:
+    """
+    Check if holiday mode should be active based on current datetime.
+    
+    Args:
+        now: Current datetime
+    
+    Returns:
+        True if holiday mode should be active, False otherwise
+    """
+    holiday_config = CONFIG.get("holiday_mode", {})
+    mode = holiday_config.get("mode", 0)
+    
+    # Mode 0: Force disable
+    if mode == 0:
+        return False
+    
+    # Mode 2: Force enable
+    if mode == 2:
+        return True
+    
+    # Mode 1: Enable on date/time
+    if mode == 1:
+        start_date_str = holiday_config.get("start_date", "")
+        start_time_str = holiday_config.get("start_time", "00:00")
+        end_date_str = holiday_config.get("end_date", "")
+        end_time_str = holiday_config.get("end_time", "23:59")
+        
+        try:
+            # Parse start datetime
+            start_date = dt.datetime.strptime(start_date_str, "%Y-%m-%d").date()
+            start_hour, start_min = map(int, start_time_str.split(":"))
+            start_dt = dt.datetime.combine(start_date, dt.time(start_hour, start_min))
+            
+            # Parse end datetime
+            end_date = dt.datetime.strptime(end_date_str, "%Y-%m-%d").date()
+            end_hour, end_min = map(int, end_time_str.split(":"))
+            end_dt = dt.datetime.combine(end_date, dt.time(end_hour, end_min))
+            
+            # Check if current time is within range
+            return start_dt <= now <= end_dt
+            
+        except (ValueError, AttributeError) as e:
+            log(f"[WARN] Invalid holiday mode date/time config: {e}")
+            return False
+    
+    # Unknown mode
+    return False
 
 
 def is_top_of_hour(timestamp: dt.datetime, window_minutes: int = 10) -> bool:
@@ -89,13 +140,15 @@ async def run_once():
     
     # Check for manual mode and holiday mode (manual mode affects both normal and holiday mode)
     manual_mode_enabled = CONFIG.get("manual_mode", {}).get("enable", 0) == 1
-    holiday_mode_enabled = CONFIG.get("holiday_mode", {}).get("enable", 0) == 1
+    holiday_mode_enabled = is_holiday_mode_active(now)  # Use date/time-based check
     
     # Select appropriate control config based on mode
     if holiday_mode_enabled:
         control_config = CONFIG.get("holiday_control", control_config)
         flow_limits = CONFIG.get("holiday_flow_limits", flow_limits)
         log("[HOLIDAY MODE] Using holiday mode settings (lower target temp, conservative weather curve)")
+    else:
+        log("[NORMAL MODE] Using normal mode settings")
     
     if manual_mode_enabled:
         log("[MANUAL MODE] Flow temperature calculation only - no MELCloud application")
